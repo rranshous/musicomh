@@ -1,0 +1,13 @@
+goals:
+    pull data down
+    be able to rebuild data from web source easily
+    be able to easily update a given path's parser / processor
+    multithreaded
+    dynamic attribes for items
+    parser templates
+
+ideas:
+    routes mapped to "controllers" which pull + process a given page for it's data 
+    dir / package structure to match the site layout ?
+
+

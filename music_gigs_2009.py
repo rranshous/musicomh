@@ -56,19 +56,4 @@ def grab_listing(url):
         items.append(item)
     return items
 
-    # this works but is to hard to work with
-    items = [dict(zip([n for c,n in classes],x)) for x in
-                zip(*tuple([_get_content(soup.findAll('td',{'class':c}))
-                    for c,n in classes]))]
-
-    return items
-
-
-
-
-
-
-
-
-
 
