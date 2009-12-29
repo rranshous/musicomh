@@ -3,20 +3,26 @@
 # review (or w/e)
 
 from urllib2 import urlopen
+from urlparse import urljoin
 from BeautifulSoup import BeautifulSoup as BS
 import re
-from urlparse import urlparse
+
+def strip_tags(s):
+    return re.sub(r'<[^>]*?>','',s)
 
 # get the content from an item
 def _get_content(item):
     content = [str(c).strip() for c in item.contents if str(c).strip()]
     content = content[0]
     # strip the html
-    content = re.sub(r'<[^>]*?>','',content)
+    content = strip_tags(content)
     return content
 
 def get_content(items):
     return map(items,_get_content)
+
+def massage_html(html):
+    return html.replace("</scri'+'pt>",'</script>')
 
 def grab_listing(url):
     # we are going to grab the listing page and return back
@@ -28,8 +34,7 @@ def grab_listing(url):
     # go through the output
     html = ''.join(lines)
     # due to gay script tag
-    html = html.replace("</scri'+'pt>",'</script>')
-    soup = BS(html)
+    soup = BS(massage_html(html))
 
     # classes:
     #  black20 = heading of item
