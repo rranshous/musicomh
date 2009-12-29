@@ -1,24 +1,22 @@
-# we want to try and grab a dir of the site + create a data set for each
+# we want to try and grab the gigs
+# dir of the site + create a data set for each
 # review (or w/e)
 
-from diskdb.Blip import Blip
 from urllib2 import urlopen
 from BeautifulSoup import BeautifulSoup as BS
 import re
+from urlparse import urlparse
 
 # get the content from an item
-def _get_content(items):
-    if not isinstance(items,list):
-        items = [items]
-    to_return = []
-    for item in items:
-        print 'C:',item.contents
-        content = [str(c).strip() for c in item.contents if str(c).strip()]
-        content = content[0]
-        # strip the html
-        content = re.sub(r'<[^>]*?>','',content)
-        to_return.append(content)
-    return to_return
+def _get_content(item):
+    content = [str(c).strip() for c in item.contents if str(c).strip()]
+    content = content[0]
+    # strip the html
+    content = re.sub(r'<[^>]*?>','',content)
+    return content
+
+def get_content(items):
+    return map(items,_get_content)
 
 def grab_listing(url):
     # we are going to grab the listing page and return back
@@ -47,17 +45,18 @@ def grab_listing(url):
     # [ {classes[1]:value(classes[0])}, {.. ]
 
     items = []
-    for item_data in zip(*tuple([
-                            soup.findAll('td',{'class':c)]) for c,n in classes)):
+    soup_items = zip(*[soup.findAll('td',{'class':c}) for c,n in classes])
+    for item_data in soup_items:
         item = {}
-        for i,(c,n) in enumerate(classes):
-            print 'D:',item_data[i]
-            item[n] = _get_content(item_data[i])
-            # we are also on the lookout for the url
-            #if item_data[i][0]
+        for i,d in enumerate(item_data):
+            item[classes[i][1]] = _get_content(d)
+            # we also want to grab the url for the item's page
+            if d.contents[1].get('href'):
+                item['item_link_href'] = urljoin(url,d.contents[1].get('href'))
         items.append(item)
     return items
 
+    # this works but is to hard to work with
     items = [dict(zip([n for c,n in classes],x)) for x in
                 zip(*tuple([_get_content(soup.findAll('td',{'class':c}))
                     for c,n in classes]))]
