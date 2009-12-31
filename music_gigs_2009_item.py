@@ -1,7 +1,7 @@
 # pull the item data
 
 from BeautifulSoup import BeautifulSoup as BS
-from urllib2 import urlopen
+from urllib2 import urlopen,HTTPError
 from music_gigs_2009 import _get_content as _base_get_content, massage_html, strip_tags
 
 def _get_content_(elements):
@@ -19,7 +19,7 @@ def _get_content_item_content(elements):
     for el in elements:
         for content in el.contents:
             # we want the string, not the bs from soup
-            content = str(content)
+            content = unicode(content)
             # we don't want blank lines, or bullshit, bullshit = all caps?
             if content.upper() == content: continue
             if content.strip() == '': continue # don't need blank lines
@@ -42,7 +42,11 @@ def pull_item(url):
     # try and grab the relevant data + return back a dict
 
     # grab the html
-    lines = urlopen(url)
+    try:
+        lines = urlopen(url)
+    except HTTPError, ex:
+        return {}
+
     html = ''.join(lines)
     soup = BS(massage_html(html))
 
@@ -57,7 +61,7 @@ def pull_item(url):
                ('div','blackitalic','item_author')]
 
     # we are going to pull the item's info
-    item = {}
+    item = {'item_url':url}
     function_base = '_get_content_'
     for t,c,n in classes:
         elements = soup.findAll(t,{'class':c})
