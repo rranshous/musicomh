@@ -3,6 +3,7 @@
 from BeautifulSoup import BeautifulSoup as BS
 from urllib2 import urlopen,HTTPError
 from music_gigs_2009 import _get_content as _base_get_content, massage_html, strip_tags
+import re
 
 def _get_content_(elements):
     # use the base
@@ -35,6 +36,8 @@ def _get_content_item_content(elements):
     return "\n".join(to_return)
 
 def _get_content_item_author(elements):
+    print 'els:',elements
+    if not elements: return ''
     return strip_tags(str(elements[0].contents[1])).strip()
 
 def pull_item(url):
@@ -73,5 +76,9 @@ def pull_item(url):
         fn = globals().get(function_base+n) or globals().get(function_base)
         content = fn(elements)
         item[n] = content
+
+    # if the item doesn't have an author, than the tag is probably malformed
+    if not item.get('item_author'):
+        item['item_author'] = strip_tags(re.findall(r'(>-.*</)',html)[0])[3:-2].strip()
 
     return item
