@@ -20,13 +20,15 @@ def get_archive_list(url):
     base_item = {'item_link_date':None}
     items = []
     for el in soup.findAll('td', {'class':lambda a: a in classes}):
-        print 'el:',el
         if el.get('class') == 'greybold':
             # it's the date
             base_item['item_link_date'] = _base_get_content(el)
         else:
             item = copy(base_item)
-            item['item_link_text'] = _base_get_content(el)
-            items.append(item)
+            content = _base_get_content(el)
+            if content:
+                item['item_link_text'] = content
+                item['item_link_href'] = urljoin(url,el.contents[1].get('href'))
+                items.append(item)
 
     return items
