@@ -9,7 +9,7 @@ def _get_content_(elements):
     return ' '.join(map(_base_get_content,elements))
 
 def _get_content_item_heading(elements):
-    return str(elements[0].contents[2]).strip()
+    return str(elements[0].contents[2]).strip() or str(elements[0].contents[4]).strip()
 
 def _get_content_item_content(elements):
     # the content is spread out through many elements
@@ -47,12 +47,13 @@ def pull_item(url):
     except HTTPError, ex:
         return {}
 
-    html = ''.join(lines)
+    html = massage_html(''.join(lines))
     try:
-        soup = BS(massage_html(html))
+        soup = BS(html)
     except Exception, ex:
-        print 'EXCEPTION:',url
-        raise
+        print 'EXCEPTION:',url,len(html)
+        #raise
+        return {}
 
     # classes:
     #  blackbig = heading
