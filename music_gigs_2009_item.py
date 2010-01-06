@@ -48,7 +48,11 @@ def pull_item(url):
         return {}
 
     html = ''.join(lines)
-    soup = BS(massage_html(html))
+    try:
+        soup = BS(massage_html(html))
+    except Exception, ex:
+        print 'EXCEPTION:',url
+        raise
 
     # classes:
     #  blackbig = heading
