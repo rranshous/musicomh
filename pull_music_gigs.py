@@ -69,10 +69,8 @@ def get_archive(pool_size=4):
 
     # wait for the lists to be processed
     while [x for x in list_results if not x.ready()]:
-        print 'list_results:',len([x for x in list_results if not x.ready()])
         time.sleep(1)
 
-    print 'closing'
     pool.close()
     pool.join()
 

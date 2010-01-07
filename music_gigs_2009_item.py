@@ -36,7 +36,6 @@ def _get_content_item_content(elements):
     return "\n".join(to_return)
 
 def _get_content_item_author(elements):
-    print 'els:',elements
     if not elements: return ''
     return strip_tags(str(elements[0].contents[1])).strip()
 

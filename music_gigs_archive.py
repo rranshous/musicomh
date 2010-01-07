@@ -58,7 +58,7 @@ def get_archive_list(url):
             # if normal
             else:
                 item.update(_get_normal(el,url))
-                if not item.get('item_link_heading'): continue
+#                if not item.get('item_link_heading'): continue
             items.append(item)
 
     return items
