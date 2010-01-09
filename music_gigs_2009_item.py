@@ -43,10 +43,14 @@ def pull_item(url):
     # we are going to pull down the html for the item page
     # try and grab the relevant data + return back a dict
 
+    if not url:
+        return {}
+
     # grab the html
     try:
         lines = urlopen(url)
     except HTTPError, ex:
+        print 'EXCEPTION:',str(ex)
         return {}
 
     html = massage_html(''.join(lines))
@@ -55,7 +59,8 @@ def pull_item(url):
     except Exception, ex:
         print 'EXCEPTION:',url,len(html)
         #raise
-        return {}
+        #return {}
+        return html
 
     # classes:
     #  blackbig = heading
@@ -75,6 +80,12 @@ def pull_item(url):
         fn = globals().get(function_base+n) or globals().get(function_base)
         content = fn(elements)
         item[n] = content
+
+    # there might be articles with multiple pages
+    page = 1
+    if 'Page %s' in html:
+        # follow to the next page and grab the content
+        pass
 
     # if the item doesn't have an author, than the tag is probably malformed
     if not item.get('item_author'):

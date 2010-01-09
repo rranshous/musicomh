@@ -6,15 +6,14 @@ from music_gigs_archive import get_archive_list as get_archive_listing
 from music_gigs_2009_item import pull_item as get_archive_item
 
 from multiprocessing import Pool, Process, Pipe
+from Queue import Queue
+from threading import Thread
 
 from urlparse import urljoin
 
 import time
 
 LISTING_BASE_URL_2009 = 'http://musicomh.com/music/gigs/'
-
-def wrap_pipe(*args,**kwargs):
-    pipe = kwargs.get('pipe')
 
 
 def get_2009(pool_size=4):
@@ -43,6 +42,57 @@ def get_archive_page_urls():
     # for now we are just returning back the ~hardcoded list
     return [urljoin('http://musicomh.com/music/gigs/','index-%s.htm' % i)
                 for i in xrange(2008,1999,-1)]
+
+def get_archive_threads(pool_size=4):
+    # we are going to try and do the same as get_archive
+    # but using threads instead of processes
+    start = time.time()
+    items = []
+
+    def do_the_work(index_work_queue,item_work_queue,item_result_queue):
+        while not index_work_queue.empty() or not item_work_queue.empty():
+            try:
+                # try and do some index processing
+                if not index_work_queue.empty():
+                    map(item_work_queue.put_nowait,get_archive_listing(index_work_queue.get_nowait()))
+                elif not item_work_queue.empty():
+                    data = item_work_queue.get_nowait()
+                    data.update(get_archive_item(data.get('item_link_href')))
+                    item_result_queue.put_nowait(data)
+            except Exception, ex:
+                print 'EXCEPTION:',str(ex)
+            
+            
+    # load up the queues
+    index_work_queue = Queue(0)
+    item_work_queue = Queue(0)
+    item_result_queue = Queue(0)
+    map(index_work_queue.put_nowait,get_archive_page_urls())
+
+    # setup the threads
+    threads = []
+    for i in xrange(pool_size):
+        thread = Thread(target=do_the_work,
+                        args=(index_work_queue,item_work_queue,item_result_queue))
+        thread.start()
+        threads.append(thread)
+
+    # wait for our queues to empty
+    while not item_work_queue.empty() or not index_work_queue.empty() or item_result_queue.empty():
+        print 'index:',index_work_queue.qsize(),
+        print 'items:',item_work_queue.qsize()
+        time.sleep(1)
+
+    # make sure they are done
+    for thread in threads:
+        thread.join()
+        
+    print 'TIME ELAPSED:',(time.time() - start)
+
+    # and get our results
+    items = [i for i in item_result_queue.get_nowait()]
+
+    return items
 
 def get_archive(pool_size=4):
     # we are going to pull the archive list pages for 2008-2000

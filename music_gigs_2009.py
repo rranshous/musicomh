@@ -12,7 +12,7 @@ def strip_tags(s):
 
 # get the content from an item
 def _get_content(item):
-    content = [str(c).strip() for c in item.contents if str(c).strip()]
+    content = [unicode(c).strip() for c in item.contents if unicode(c).strip()]
     content = content[0]
     # strip the html
     content = strip_tags(content)

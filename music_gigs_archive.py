@@ -25,9 +25,9 @@ def _get_normal(el,url):
     content = _base_get_content(el)
     if not content: return {}
     return { 'item_link_heading': content,
-             'item_link_href': urljoin(url,el.contents[1].get('href')),
-             'item_link_subheading': el.contents[2].strip(),
-             'item_link_date': strip_tags(str(el.contents[3])).strip() }
+             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else el.contents[1]),
+             'item_link_subheading': el.contents[3].strip() if '[pictures]' in el.contents[2] else el.contents[2] }
+             #'item_link_date': strip_tags(str(el.contents[3])).strip() }
 
 def get_archive_list(url):
     # grab our html
@@ -48,7 +48,7 @@ def get_archive_list(url):
         else:
             # could be a pic line or could be a normal
             item = copy(base_item)
-            all_content = ''.join([str(x).lower() for x in el.contents])
+            all_content = ''.join([unicode(x).lower() for x in el.contents])
             # if picture
             if 'in pictures:' in all_content:
                 item.update(_get_in_pictures(el,url))
