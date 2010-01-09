@@ -21,13 +21,19 @@ def _get_in_pictures(el,url):
              'item_link_date': strip_tags(str(el.contents[4]).strip()),
              'item_link_heading': strip_tags(str(el.contents[3])).strip() }
 
+def _get_normal_with_extra_link(el,url):
+    return { 'item_link_heading': content,
+             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else el.contents[1]),
+             'item_link_subheading': el.contents[3].strip(),
+             'extra_link': el.contents[2].strip() }
+             #'item_link_date': strip_tags(str(el.contents[3])).strip() }
+
 def _get_normal(el,url):
     content = _base_get_content(el)
     if not content: return {}
     return { 'item_link_heading': content,
              'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else el.contents[1]),
-             'item_link_subheading': el.contents[3].strip() if '[pictures]' in el.contents[2] else el.contents[2] }
-             #'item_link_date': strip_tags(str(el.contents[3])).strip() }
+             'item_link_subheading': el.contents[2] }
 
 def get_archive_list(url):
     # grab our html
@@ -55,6 +61,9 @@ def get_archive_list(url):
             # if feature
             elif 'feature:' in all_content:
                 item.update(_get_feature(el,url))
+            # if extra link
+            elif '[pictures]' in all_content:
+                item.update(_get_normal_with_extra_link(el,url))
             # if normal
             else:
                 item.update(_get_normal(el,url))
