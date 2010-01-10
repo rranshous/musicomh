@@ -66,8 +66,8 @@ def get_archive_threads(pool_size=4):
             except Exception, ex:
                #print 'EXCEPTION:',str(ex)
                 raise
-            
-            
+
+
     # load up the queues
     index_work_queue = Queue(0)
     item_work_queue = Queue(0)
@@ -93,7 +93,7 @@ def get_archive_threads(pool_size=4):
     # make sure they are done
     for thread in threads:
         thread.join()
-        
+
     print 'TIME ELAPSED:',(time.time() - start)
 
     # and get our results

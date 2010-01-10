@@ -10,21 +10,21 @@ from music_gigs_2009 import _get_content as _base_get_content, massage_html, str
 def _get_feature(el,url):
     return { 'is_feature':1,
              'item_link_href': urljoin(url,el.contents[3].get('href')),
-             'item_link_subheading': str(el.contents[4].strip()),
+             'item_link_subheading': unicode(el.contents[4].strip()),
              'item_link_heading': strip_tags(str(el.contents[3]).strip()),
              'item_link_date': strip_tags(str(el.contents[4])).strip() }
 
 def _get_in_pictures(el,url):
     return { 'is_in_pictures':1,
              'item_link_href': urljoin(url,el.contents[3].get('href')),
-             'item_link_subheading': str(el.contents[4].strip()),
+             'item_link_subheading': unicode(el.contents[4].strip()),
              'item_link_date': strip_tags(str(el.contents[4]).strip()),
              'item_link_heading': strip_tags(str(el.contents[3])).strip() }
 
 def _get_normal_with_extra_link(el,url):
     content = _base_get_content(el)
     if not content: return {}
-    return { 'item_link_heading': content,
+    return { 'item_link_heading': unicode(content), # in progress
              'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else unicode(el.contents[1])),
              'item_link_subheading': unicode(el.contents[3]).strip(),
              'extra_link': unicode(el.contents[2]).strip() }
@@ -33,8 +33,8 @@ def _get_normal(el,url):
     content = _base_get_content(el)
     if not content: return {}
     return { 'item_link_heading': content,
-             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else el.contents[1]),
-             'item_link_subheading': el.contents[2] }
+             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else unicode(el.contents[1])),
+             'item_link_subheading': unicode(el.contents[2]) }
 
 def get_archive_list(url):
     # grab our html
@@ -69,6 +69,8 @@ def get_archive_list(url):
             else:
                 item.update(_get_normal(el,url))
 #                if not item.get('item_link_heading'): continue
-            items.append(item)
+            if len(item) != 1: # must have @ least some data
+                items.append(item)
+
 
     return items
