@@ -56,11 +56,15 @@ def get_archive_threads(pool_size=4):
                 if not index_work_queue.empty():
                     map(item_work_queue.put_nowait,get_archive_listing(index_work_queue.get_nowait()))
                 elif not item_work_queue.empty():
-                    data = item_work_queue.get_nowait()
-                    data.update(get_archive_item(data.get('item_link_href')))
-                    item_result_queue.put_nowait(data)
+                    try:
+                        data = item_work_queue.get_nowait()
+                        data.update(get_archive_item(data.get('item_link_href')))
+                        item_result_queue.put_nowait(data)
+                    except Exception, ex:
+                        print 'item exception:',str(ex)
             except Exception, ex:
-                print 'EXCEPTION:',str(ex)
+               #print 'EXCEPTION:',str(ex)
+                raise
             
             
     # load up the queues
