@@ -5,13 +5,15 @@ from music_gigs_2009_item import pull_item as get_2009_item
 from music_gigs_archive import get_archive_list as get_archive_listing
 from music_gigs_2009_item import pull_item as get_archive_item
 
-from multiprocessing import Pool, Process, Pipe
-from Queue import Queue
+from multiprocessing import Pool, Process, Pipe, Queue as PQueue
+from Queue import Queue, Empty, Full
 from threading import Thread
 
 from urlparse import urljoin
 
 import time
+
+import os
 
 LISTING_BASE_URL_2009 = 'http://musicomh.com/music/gigs/'
 
@@ -135,13 +137,78 @@ def get_archive(pool_size=4):
 
     return items
 
+def get_archive_both(pool_size=4):
+    # we are going to return a filled out item list
 
+    start = time.time()
 
+    # we are going to spawn a proc for each processor
+    cores = os.sysconf("SC_NPROCESSORS_ONLN")
 
+    # we are going to spawn up a process per core, and pool_size threads per proc
 
+    # our functions
+    def thread_run(index_work_queue,item_work_queue,item_result_queue):
+        while not index_work_queue.empty() or not item_work_queue.empty():
+            try:
+                # try and do some index processing
+                if not index_work_queue.empty():
+                    map(item_work_queue.put_nowait,get_archive_listing(index_work_queue.get_nowait()))
+                elif not item_work_queue.empty():
+                    try:
+                        data = item_work_queue.get_nowait()
+                        data.update(get_archive_item(data.get('item_link_href')))
+                        item_result_queue.put_nowait(data)
+                    except Exception, ex:
+                        print 'item exception:',str(ex)
+            except Empty:
+                continue
 
+            except Exception, ex:
+               #print 'EXCEPTION:',str(ex)
+                raise
 
+    def proc_run(index_work_queue,item_work_queue,item_result_queue,pool_size):
+        # we need to spawn up our threads
+        threads = []
+        for i in xrange(pool_size):
+            thread = Thread(target=thread_run,
+                            args=(index_work_queue,item_work_queue,item_result_queue))
+            thread.start()
+            threads.append(thread)
+        # join + wait
+        for t in threads:
+            t.join()
 
+    # our q's
+    index_work_queue = PQueue(0)
+    item_work_queue = PQueue(0)
+    item_result_queue = PQueue(0)
+    map(index_work_queue.put_nowait,get_archive_page_urls())
 
+    # start our proc pool
+    pool = []
+    for i in xrange(cores):
+        proc = Process(target=proc_run,args=(index_work_queue,item_work_queue,item_result_queue,pool_size))
+        proc.start()
+        pool.append(proc)
+
+    while [p for p in pool if p.is_alive()]:
+        print 'index:',index_work_queue.qsize(),
+        print 'items:',item_work_queue.qsize(),
+        print 'items/s:',(item_result_queue.qsize() / (time.time()-start)),
+        print 'elapsed:',(time.time() - start)
+        time.sleep(10)
+
+    for p in pool:
+        p.join()
+
+    # pull our item list
+    items = [i for i in item_result_queue.get_nowait()]
+
+    print 'TIME ELAPSED:',(time.time()-start)
+
+    # and return
+    return items
 
 
