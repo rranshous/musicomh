@@ -117,6 +117,7 @@ def get_archive(pool_size=4):
         # we are going to add our item to the item list and than updat it's info
         for item in page_items:
             items.append(item)
+            print 'item_url:',item.get('item_link_href')
             pool.apply_async(get_archive_item,(item.get('item_link_href'),),
                          callback=item.update)
 
@@ -137,7 +138,7 @@ def get_archive(pool_size=4):
 
     return items
 
-def get_archive_both(pool_size=4):
+def get_archive_both(threads=10,procs=None):
     # we are going to return a filled out item list
 
     start = time.time()
@@ -154,12 +155,13 @@ def get_archive_both(pool_size=4):
                 # try and do some index processing
                 if not index_work_queue.empty():
                     map(item_work_queue.put_nowait,get_archive_listing(index_work_queue.get_nowait()))
-                elif not item_work_queue.empty():
+                if not item_work_queue.empty():
                     try:
                         data = item_work_queue.get_nowait()
                         data.update(get_archive_item(data.get('item_link_href')))
                         item_result_queue.put_nowait(data)
                     except Exception, ex:
+                        print 'item:',data.get('item_link_href')
                         print 'item exception:',str(ex)
             except Empty:
                 continue
@@ -188,15 +190,17 @@ def get_archive_both(pool_size=4):
 
     # start our proc pool
     pool = []
-    for i in xrange(cores):
-        proc = Process(target=proc_run,args=(index_work_queue,item_work_queue,item_result_queue,pool_size))
+    for i in xrange(procs or cores):
+        proc = Process(target=proc_run,args=(index_work_queue,item_work_queue,item_result_queue,threads))
         proc.start()
         pool.append(proc)
 
-    while [p for p in pool if p.is_alive()]:
+    start_work = time.time()
+
+    while not index_work_queue.empty() or not item_work_queue.empty() or item_result_queue.empty():
         print 'index:',index_work_queue.qsize(),
         print 'items:',item_work_queue.qsize(),
-        print 'items/s:',(item_result_queue.qsize() / (time.time()-start)),
+        print 'items/s:',(item_result_queue.qsize() / (time.time()-start_work)),
         print 'elapsed:',(time.time() - start)
         time.sleep(10)
 

@@ -10,7 +10,7 @@ def _get_content_(elements):
     return ' '.join(map(_base_get_content,elements))
 
 def _get_content_item_heading(elements):
-    return str(elements[0].contents[2]).strip() or str(elements[0].contents[4]).strip()
+    return unicode(elements[0].contents[2]).strip() or unicode(elements[0].contents[4]).strip()
 
 def _get_content_item_content(elements):
     # the content is spread out through many elements
@@ -50,7 +50,7 @@ def pull_item(url):
     try:
         lines = urlopen(url)
     except HTTPError, ex:
-        print 'EXCEPTION:',str(ex)
+        print 'EXCEPTION:',url,str(ex)
         return {}
 
     html = massage_html(''.join(lines))

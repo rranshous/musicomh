@@ -25,16 +25,16 @@ def _get_normal_with_extra_link(el,url):
     content = _base_get_content(el)
     if not content: return {}
     return { 'item_link_heading': unicode(content), # in progress
-             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else unicode(el.contents[1])),
-             'item_link_subheading': unicode(el.contents[3]).strip(),
+             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else unicode(el.contents[0].get('href'))),
+             'item_link_subheading': strip_tags(unicode(el.contents[3])).strip(),
              'extra_link': unicode(el.contents[2]).strip() }
 
 def _get_normal(el,url):
     content = _base_get_content(el)
     if not content: return {}
     return { 'item_link_heading': content,
-             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else unicode(el.contents[1])),
-             'item_link_subheading': unicode(el.contents[2]) }
+             'item_link_href': urljoin(url,el.contents[1].get('href') if hasattr(el.contents[1],'get') else unicode(el.contents[0].get('href'))),
+             'item_link_subheading': strip_tags(unicode(el.contents[2])).strip() }
 
 def get_archive_list(url):
     # grab our html
