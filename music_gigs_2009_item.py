@@ -59,8 +59,7 @@ def pull_item(url):
     except Exception, ex:
         print 'EXCEPTION:',url,len(html)
         #raise
-        #return {}
-        return html
+        return {}
 
     # classes:
     #  blackbig = heading

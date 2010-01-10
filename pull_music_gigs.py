@@ -61,6 +61,7 @@ def get_archive_threads(pool_size=4):
                         data.update(get_archive_item(data.get('item_link_href')))
                         item_result_queue.put_nowait(data)
                     except Exception, ex:
+                        print 'item:',data
                         print 'item exception:',str(ex)
             except Exception, ex:
                #print 'EXCEPTION:',str(ex)
@@ -84,8 +85,10 @@ def get_archive_threads(pool_size=4):
     # wait for our queues to empty
     while not item_work_queue.empty() or not index_work_queue.empty() or item_result_queue.empty():
         print 'index:',index_work_queue.qsize(),
-        print 'items:',item_work_queue.qsize()
-        time.sleep(1)
+        print 'items:',item_work_queue.qsize(),
+        print 'items/s:',(item_result_queue.qsize() / (time.time()-start)),
+        print 'elapsed:',(time.time() - start)
+        time.sleep(10)
 
     # make sure they are done
     for thread in threads:
