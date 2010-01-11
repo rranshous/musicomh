@@ -12,7 +12,7 @@ from threading import Thread
 from urlparse import urljoin
 
 import time
-
+import sys
 import os
 
 LISTING_BASE_URL_2009 = 'http://musicomh.com/music/gigs/'
@@ -150,7 +150,7 @@ def get_archive_both(threads=10,procs=None):
 
     # our functions
     def thread_run(index_work_queue,item_work_queue,item_result_queue):
-        while not index_work_queue.empty() or not item_work_queue.empty():
+        while not index_work_queue.empty() or not item_work_queue.empty() or item_result_queue.empty():
             try:
                 # try and do some index processing
                 if not index_work_queue.empty():
@@ -158,17 +158,22 @@ def get_archive_both(threads=10,procs=None):
                 if not item_work_queue.empty():
                     try:
                         data = item_work_queue.get_nowait()
-                        data.update(get_archive_item(data.get('item_link_href')))
+                        r = get_archive_item(data.get('item_link_href'))
+                        data.update(r)
                         item_result_queue.put_nowait(data)
+                    except Empty:
+                        continue
                     except Exception, ex:
                         print 'item:',data.get('item_link_href')
                         print 'item exception:',str(ex)
+                        item_result_queue.put_nowait(data)
             except Empty:
                 continue
 
             except Exception, ex:
                #print 'EXCEPTION:',str(ex)
                 raise
+        sys.exit(1)
 
     def proc_run(index_work_queue,item_work_queue,item_result_queue,pool_size):
         # we need to spawn up our threads
@@ -179,8 +184,13 @@ def get_archive_both(threads=10,procs=None):
             thread.start()
             threads.append(thread)
         # join + wait
+        while [t for t in threads if t.is_alive()]:
+            time.sleep(5)
+        print 'THREADS DONE'
         for t in threads:
             t.join()
+        print 'DONE JOINING'
+        sys.exit(1)
 
     # our q's
     index_work_queue = PQueue(0)
@@ -200,16 +210,23 @@ def get_archive_both(threads=10,procs=None):
     while not index_work_queue.empty() or not item_work_queue.empty() or item_result_queue.empty():
         print 'index:',index_work_queue.qsize(),
         print 'items:',item_work_queue.qsize(),
-        print 'items/s:',(item_result_queue.qsize() / (time.time()-start_work)),
-        print 'elapsed:',(time.time() - start)
+        print 'items/s:',(item_result_queue.qsize() / ((time.time()-start_work) or 1)),
+        print 'elapsed:',(time.time() - start),
+        print 'itemrs:',item_result_queue.qsize()
         time.sleep(10)
 
+    #print 'JOINING PROCS'
+    #for p in pool:
+    #    p.join()
     for p in pool:
-        p.join()
+        if p.exitcode is not None: # might already be done
+            p.join()
+            print 'JOINED PROC'
 
     # pull our item list
-    items = [i for i in item_result_queue.get_nowait()]
-
+    items = []
+    while not item_result_queue.empty():
+        items.append(item_result_queue.get(True,10))
     print 'TIME ELAPSED:',(time.time()-start)
 
     # and return
