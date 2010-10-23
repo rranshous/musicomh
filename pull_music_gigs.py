@@ -218,10 +218,10 @@ def get_archive_both(threads=10,procs=None):
     #print 'JOINING PROCS'
     #for p in pool:
     #    p.join()
+    print "JOINING PROCS"
     for p in pool:
-        if p.exitcode is not None: # might already be done
-            p.join()
-            print 'JOINED PROC'
+        p.join()
+        print 'JOINED PROC'
 
     # pull our item list
     items = []
@@ -232,4 +232,5 @@ def get_archive_both(threads=10,procs=None):
     # and return
     return items
 
-
+if __name__ == "__main__":
+    print 'items:',len(get_archive_both(1,4))
